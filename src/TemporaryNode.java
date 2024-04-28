@@ -72,14 +72,13 @@ public class TemporaryNode implements TemporaryNodeInterface {
     }
 
 
-
     @Override
     // Now, initializeConnection method takes care of everything, so no need to re-initialize streams in start.
     public boolean start(String startingNodeName, String startingNodeAddress) {
 
         try {
 
-            String [] segments = startingNodeAddress.split(":");
+            String[] segments = startingNodeAddress.split(":");
             String ip = segments[0];
             int port = Integer.parseInt(segments[1]);
 
@@ -87,7 +86,7 @@ public class TemporaryNode implements TemporaryNodeInterface {
             Socket clientSocket = new Socket(ip, port);
 
             in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-            out = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()),true);
+            out = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()), true);
 
             System.out.println("Connected to starting node: " + startingNodeAddress);
 
@@ -143,7 +142,6 @@ public class TemporaryNode implements TemporaryNodeInterface {
     }
 
 
-
     @Override
     public String get(String key) {
         try {
@@ -161,11 +159,10 @@ public class TemporaryNode implements TemporaryNodeInterface {
     }
 
 
-
     public static void main(String[] args) {
         TemporaryNode testTempNode = new TemporaryNode();
 
-        if(testTempNode.start("hana.abikar@city.ac.uk", "127.0.0.1:1234")){
+        if (testTempNode.start("hana.abikar@city.ac.uk", "127.0.0.1:1234")) {
             System.out.println("connection successful");
         }
     }
