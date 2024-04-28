@@ -16,30 +16,22 @@ import java.util.HashMap;
 import java.util.Map;
 import java.math.BigInteger;
 
-
-
 // DO NOT EDIT starts
 interface TemporaryNodeInterface {
-    boolean start(String startingNodeName, String startingNodeAddress) throws IOException;
+    boolean start(String nodeName, String nodeAddress) throws IOException;
     boolean store(String key, String value);
     String get(String key);
 }
 // DO NOT EDIT ends
 
-
 public class TemporaryNode implements TemporaryNodeInterface {
 
-    private Socket socket;
-
-    private BufferedReader in;
-
-    PrintWriter out;
-
+    private BufferedReader inputReader;
+    private PrintWriter outputWriter;
     private Socket clientSocket;
+    private final Map<String, String> nodeDistanceMap = new HashMap<>();
 
-    private final Map<String, String> networkMap = new HashMap<>();
-
-    public String calculateHashID(String text) throws NoSuchAlgorithmException {
+    public String generateHashFromString(String text) throws NoSuchAlgorithmException {
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         byte[] hash = digest.digest(text.getBytes(StandardCharsets.UTF_8));
         StringBuilder hexString = new StringBuilder();
@@ -51,16 +43,11 @@ public class TemporaryNode implements TemporaryNodeInterface {
         return hexString.toString();
     }
 
-    private int calculateDistance(String hashID1, String hashID2) {
-        // Convert hex string to binary string
+    private int calculateHammingDistance(String hashID1, String hashID2) {
         StringBuilder bin1 = new StringBuilder(new BigInteger(hashID1, 16).toString(2));
         StringBuilder bin2 = new StringBuilder(new BigInteger(hashID2, 16).toString(2));
-
-        // Pad strings to ensure they are of equal length
         while (bin1.length() < bin2.length()) bin1.insert(0, "0");
         while (bin2.length() < bin1.length()) bin2.insert(0, "0");
-
-        // Calculate the distance
         int distance = 0;
         for (int i = 0; i < bin1.length(); i++) {
             if (bin1.charAt(i) != bin2.charAt(i)) {
@@ -71,28 +58,17 @@ public class TemporaryNode implements TemporaryNodeInterface {
         return 256 - distance;
     }
 
-
-
     @Override
-    // Now, initializeConnection method takes care of everything, so no need to re-initialize streams in start.
-    public boolean start(String startingNodeName, String startingNodeAddress) {
-
+    public boolean start(String nodeName, String nodeAddress) {
         try {
-
-            String [] segments = startingNodeAddress.split(":");
+            String[] segments = nodeAddress.split(":");
             String ip = segments[0];
             int port = Integer.parseInt(segments[1]);
-
-            System.out.println("Client connecting....");
-            Socket clientSocket = new Socket(ip, port);
-
-            in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-            out = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()),true);
-
-            System.out.println("Connected to starting node: " + startingNodeAddress);
-
-            out.println("START 1 " + startingNodeName + "\n");
-            out.flush();
+            clientSocket = new Socket(ip, port);
+            inputReader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+            outputWriter = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()), true);
+            outputWriter.println("START 1 " + nodeName + "\n");
+            outputWriter.flush();
             return true;
         } catch (IOException e) {
             e.printStackTrace();
@@ -100,41 +76,33 @@ public class TemporaryNode implements TemporaryNodeInterface {
         }
     }
 
-
-    private String findNearestNode(String targetHashID) {
+    private String getNearestNodeAddress(String targetHashID) {
         String nearestNodeAddress = null;
         int shortestDistance = Integer.MAX_VALUE;
-
-        for (Map.Entry<String, String> entry : networkMap.entrySet()) {
-            int distance = calculateDistance(targetHashID, entry.getKey());
+        for (Map.Entry<String, String> entry : nodeDistanceMap.entrySet()) {
+            int distance = calculateHammingDistance(targetHashID, entry.getKey());
             if (distance < shortestDistance) {
                 shortestDistance = distance;
                 nearestNodeAddress = entry.getValue();
             }
         }
-
         return nearestNodeAddress;
     }
 
     @Override
     public boolean store(String key, String value) {
         try {
-            // Splitting key and value into lines
             String[] keyLines = key.split("\n");
             String[] valueLines = value.split("\n");
-
-            // Sending the PUT? request with the number of lines for key and value
-            out.println("PUT? " + keyLines.length + " " + valueLines.length);
+            outputWriter.println("PUT? " + keyLines.length + " " + valueLines.length);
             for (String line : keyLines) {
-                out.println(line);
+                outputWriter.println(line);
             }
             for (String line : valueLines) {
-                out.println(line);
+                outputWriter.println(line);
             }
-            out.flush();
-
-            // Reading the response from the server
-            String response = in.readLine();
+            outputWriter.flush();
+            String response = inputReader.readLine();
             return "SUCCESS".equals(response);
         } catch (IOException e) {
             e.printStackTrace();
@@ -142,33 +110,28 @@ public class TemporaryNode implements TemporaryNodeInterface {
         }
     }
 
-
-
     @Override
     public String get(String key) {
         try {
-            //kep
-            // Calculate the hashID for the key
-            out.write("GET? " + key.split("\n").length + "\n");
-            out.write(key + "\n");
-            out.flush();
+            // Write the GET command to the server
+            outputWriter.println("GET? " + key.split("\n").length);
+            outputWriter.println(key);
+            outputWriter.flush();  // Make sure to flush the writer to send data immediately
 
-            String response = in.readLine();
-            return response;
+            // Read the response from the server
+            String response = inputReader.readLine();
+
+            // Check if the response indicates a value was found
+            if (response != null && response.startsWith("VALUE")) {
+                return response.substring(6); // Assuming the response is "VALUE <actual_value>"
+            } else {
+                System.err.println("Error or no value found for key: " + key + " - Response: " + response);
+                return null;  // Return null if no value found or there is an error
+            }
         } catch (IOException e) {
+            System.err.println("IOException during get operation: " + e.getMessage());
             e.printStackTrace();
             return null;
         }
     }
-
-
-
-    public static void main(String[] args) {
-        TemporaryNode testTempNode = new TemporaryNode();
-
-        if(testTempNode.start("hana.abikar@city.ac.uk", "127.0.0.1:7777")){
-            System.out.println("connection successful");
-        }
-    }
-
 }
