@@ -17,7 +17,7 @@ interface TemporaryNodeInterface {
 
 
 public class TemporaryNode implements TemporaryNodeInterface {
-
+private Writer writer;
     public boolean start(String startingNodeName, String startingNodeAddress) {
 	// Implement this!
 	// Return true if the 2D#4 network can be contacted
