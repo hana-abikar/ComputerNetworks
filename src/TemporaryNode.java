@@ -166,7 +166,7 @@ public class TemporaryNode implements TemporaryNodeInterface {
     public static void main(String[] args) {
         TemporaryNode testTempNode = new TemporaryNode();
 
-        if(testTempNode.start("latiifa.hussein@city.ac.uk", "127.0.0.1:7777")){
+        if(testTempNode.start("hana.abikar@city.ac.uk", "127.0.0.1:1234")){
             System.out.println("connection successful");
         }
     }
