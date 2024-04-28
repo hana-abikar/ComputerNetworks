@@ -18,7 +18,7 @@ public class CmdLineGet {
             String startingNodeName = args[0];
 	    String startingNodeAddress = args[1];
 
-	    String key = args[2] + '\n';
+	    String key = args[2] + '\n'; 
 
             // Use a TemporaryNode to get the value corresponding to key from the network
             TemporaryNode tn = new TemporaryNode();
