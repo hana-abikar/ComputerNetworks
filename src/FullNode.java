@@ -18,7 +18,7 @@ interface FullNodeInterface {
 public class FullNode implements FullNodeInterface {
 
     public boolean listen(String ipAddress, int portNumber) {
-	// Implement this!
+
 	// Return true if the node can accept incoming connections
 	// Return false otherwise
 	return true;

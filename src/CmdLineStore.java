@@ -14,7 +14,7 @@ public class CmdLineStore {
             System.err.println("DSTStoreCmdLine startingNodeName startingNodeAddress key value");
             return;
         } else {
-	    // A full node that is running on the network to be a first point of contact
+
             String startingNodeName = args[0];
 	    String startingNodeAddress = args[1];
 
